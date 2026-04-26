@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import BookmarkInput from '@/components/BookmarkInput';
 import BookmarkList from '@/components/BookmarkList';
+import { Button } from '@/components/ui/button';
 
 export interface Bookmark {
   id: string;
@@ -12,7 +14,34 @@ export interface Bookmark {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const auth = localStorage.getItem('auth');
+    if (!auth) {
+      router.push('/login');
+    } else {
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth');
+    router.push('/login');
+  };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const addBookmark = useCallback(async (url: string) => {
     // Validate URL
@@ -74,8 +103,15 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Ops Bookmark</h1>
-        <p className="text-gray-600 mb-8">Add and manage your bookmarks</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Ops Bookmark</h1>
+            <p className="text-gray-600">Add and manage your bookmarks</p>
+          </div>
+          <Button onClick={handleLogout} variant="outline">
+            Logout
+          </Button>
+        </div>
         
         <BookmarkInput onAdd={addBookmark} />
         <BookmarkList bookmarks={bookmarks} />
