@@ -66,3 +66,28 @@ export async function verifyCredentials(username: string, password: string) {
   }
   return null;
 }
+
+export async function seedAdminUser() {
+  const client = await pool.connect();
+  try {
+    // Check if admin user already exists
+    const existingUser = await getUserByUsername('admin');
+    if (existingUser) {
+      return { message: 'Admin user already exists' };
+    }
+
+    // Create admin user
+    const result = await client.query(
+      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id, username, role',
+      ['admin', 'admin', 'Admin']
+    );
+    return { message: 'Admin user created successfully', user: result.rows[0] };
+  } catch (error: any) {
+    if (error.code === '23505') {
+      return { message: 'Admin user already exists' };
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
